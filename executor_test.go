@@ -1,7 +1,6 @@
 package executor
 
 import (
-	"flag"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -12,11 +11,6 @@ import (
 
 type ExecutorTestSuite struct {
 	suite.Suite
-}
-
-func (suite *ExecutorTestSuite) SetupSuite() {
-	flag.Set("logtostderr", "true")
-	flag.Parse()
 }
 
 func (s *ExecutorTestSuite) TestInitExecutor() {
