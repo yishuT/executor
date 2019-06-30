@@ -20,6 +20,9 @@ DefaultExecutorParams generates a default param struct for
 creating Executor.
 
 NumWorkers: number of CPU report by go runtime library
+MaxJobQueueCapacity: 1000
+MaxJobQueueWaitTime: 30 seconds
+ShutdownTimeout: 3 seconds
 */
 func DefaultExecutorParams() ExecutorParams {
 	return ExecutorParams{
@@ -31,6 +34,12 @@ func DefaultExecutorParams() ExecutorParams {
 }
 
 func (p ExecutorParams) validate() error {
+	if p.NumWorkers <= 0 {
+		return errors.New("executor params: non positive NumWorkers")
+	}
+	if p.MaxJobQueueCapacity < 0 {
+		return errors.New("executor params: negative MaxJobQueueCapacity")
+	}
 	return nil
 }
 
@@ -93,6 +102,7 @@ func (w *worker) Take(j *executorJob) {
 }
 
 type Executor struct {
+	// parameters, immutable fields
 	numWorkers          int
 	maxJobQueueCapacity int
 	maxJobQueueWaitTime time.Duration
@@ -147,15 +157,17 @@ func newExecutor(params ExecutorParams) (*Executor, error) {
 func (e *Executor) truncateLoop() {
 	ticker := time.NewTicker(e.maxJobQueueWaitTime)
 	for {
-		var jobs []*executorJob
 		select {
 		case <-e.stopChan:
 			// truncate all
-			jobs = e.cleanJobQueue()
+			jobs := e.cleanJobQueue()
+			go e.dropJobs(jobs)
+			return
 		case <-ticker.C:
-			jobs = e.removeTimeoutJobsFromQueue()
+			jobs := e.removeTimeoutJobsFromQueue()
+			go e.dropJobs(jobs)
 		}
-		go e.dropJobs(jobs)
+
 	}
 }
 
@@ -233,11 +245,17 @@ func (e *Executor) Submit(runnable func()) error {
 }
 
 func (e *Executor) Stop() {
+	e.mu.Lock()
+	// stop new job submittion and workers acquiring job first
+	e.stopped = true
+	e.mu.Unlock()
+
 	close(e.stopChan)
-	// Graceful shutdown
 	for _, w := range e.workers {
 		w.Stop()
 	}
+
+	// Graceful shutdown
 	afterC := time.After(e.shutdownTimeout)
 	for {
 		inflightJobs := atomic.LoadInt32(&e.inflightJobs)
