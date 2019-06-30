@@ -168,7 +168,6 @@ func (e *Executor) truncateLoop() {
 			jobs := e.removeTimeoutJobsFromQueue()
 			go e.dropJobs(jobs)
 		}
-
 	}
 }
 

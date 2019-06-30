@@ -20,8 +20,8 @@ func (s *ExecutorTestSuite) TestJobExecuted() {
 	x := 1
 	invC := make(chan struct{})
 	err = executor.Submit(func() {
-		close(invC)
 		x++
+		close(invC)
 	})
 	s.Nil(err)
 	<-invC
