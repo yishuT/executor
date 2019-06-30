@@ -265,9 +265,8 @@ func (e *Executor) Stop() {
 
 		select {
 		case <-afterC:
-			break
+			return
 		case <-time.After(100 * time.Millisecond):
-			continue
 		}
 	}
 }
