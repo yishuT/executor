@@ -2,9 +2,9 @@ This is a golang thread pool implementation.
 
 Usage:
 ```
-    executor, err := NewExecutor(DefaultExecutorParams())
-	executor.Submit(func() { /*do something*/ })
-	executor.Stop()
+executor, err := NewExecutor(DefaultExecutorParams())
+executor.Submit(func() { /*do something*/ })
+executor.Stop()
 ```
 
 Properties:

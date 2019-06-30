@@ -151,6 +151,7 @@ func newExecutor(params ExecutorParams) (*Executor, error) {
 		workers:             make([]*worker, params.NumWorkers),
 		inflightJobs:        0,
 		stopped:             false,
+		shutdownTimeout:     params.ShutdownTimeout,
 	}, nil
 }
 
